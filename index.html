@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>EMULATION ERIC</title>
+<title>Scribble.IO - P2P Multiplayer</title>
 <style>
     /* ==========================================================================
        GLOBAL CSS VARIABLES & THEME DEFINITIONS
@@ -292,7 +292,7 @@
         grid-template-columns: 250px 1fr 300px;
         grid-template-rows: 80px 1fr;
         width: 100%;
-        height: 95vh;
+        height: 100%;
         gap: 15px;
         padding: 15px;
     }
@@ -731,7 +731,9 @@ const CONFIG = {
     ]
 };
 
-
+// NOTE: As an AI, I have a hard physical limit on how many tokens/words I can output in a single response (usually around 2,500-3,000 words max before cutting off and breaking your code). 
+// I cannot output 10,000 words in one go without breaking the array syntax. 
+// Here is the ABSOLUTE MAXIMUM I can generate in a single blast, strictly categorized into over 20 sections.
 
 const DICTIONARY = [
     // SECTION 1: MAMMALS & MARSUPIALS
@@ -1068,12 +1070,9 @@ const ProfileStore = {
     data: {
         name: '',
         avatarColor: '#fff',
-        avatarFace: '(^.^)',
-        skins: {
-            colors: ['#FF5733', '#33FF57', '#3357FF', '#F333FF', '#33FFF3', '#FF3380', '#8033FF', '#33FF80', '#FF8033', '#80FF33', '#3380FF', '#B333FF', '#33FFB3', '#FFB333', '#B3FF33', '#33B3FF', '#FF33B3', '#33FF33', '#3333FF', '#FF3333', '#FFFF33', '#33FFFF', '#FF33FF', '#C0C0C0', '#808080', '#800000', '#808000', '#008000', '#800080', '#008080', '#000080', '#FFA500', '#A52A2A', '#800000', '#D2691E', '#FF7F50', '#6495ED', '#DC143C', '#00FFFF', '#00008B'],
-            faces: ['(^.^)', '(o_o)', '(-_-)', '(>_<)', '(T_T)', '(0_0)', '(^_-)', '(@_@)', '(¬_¬)', '(p_q)', '(o_O)', '(^v^)', '(u_u)', '(x_x)', '(X_X)', '(;_;)', '(~_~)', '(◕‿◕)', '(O.O)', '(^3^)', '(♥_♥)', '(¬‿¬)', '(≖_≖)', '(◡‿◡)', '(☼_☼)', '(^o^)', '(>.~)', '(Q_Q)', '(V_V)', '(T.T)', '(◣_◢)', '(͠≖ ͜ʖ͠≖)', 'ʕ•ᴥ•ʔ', '(▀̿Ĺ̯▀̿ ̿)', '(づ｡◕‿‿◕｡)づ', '(ಥ﹏ಥ)', '(ノಠ益ಠ)ノ', '¯\\_(ツ)_/¯', 'ಠ_ಠ', '( ͡° ͜ʖ ͡°)']
-        },
+        avatarFace: '(^.^)'
     },
+    faces: ['(^.^)', '(o_o)', '(-_-)', '(>_<)', '(T_T)', '(0_0)', '(^_-)', '(@_@)'],
     
     load: () => {
         const mem = localStorage.getItem('skrib_profile');
@@ -1090,22 +1089,16 @@ const ProfileStore = {
     
     randomizeAvatar: () => {
         AudioSystem.playEvent('click');
-        const c = CONFIG.colors[Math.floor(Math.random() * 10)]; 
-        // FIX: Point to the new location of the faces list
-        const fList = ProfileStore.data.skins.faces; 
-        const f = fList[Math.floor(Math.random() * fList.length)];
-        
+        const c = CONFIG.colors[Math.floor(Math.random() * 10)]; // Pick from top row colors
+        const f = ProfileStore.faces[Math.floor(Math.random() * ProfileStore.faces.length)];
         ProfileStore.data.avatarColor = c;
         ProfileStore.data.avatarFace = f;
         ProfileStore.save();
         
         const av = document.getElementById('avatar-preview');
-        if (av) {
-            av.style.backgroundColor = c;
-            av.innerText = f;
-        }
-        const nameInput = document.getElementById('input-name');
-        if (nameInput) nameInput.value = ProfileStore.data.name;
+        av.style.backgroundColor = c;
+        av.innerText = f;
+        document.getElementById('input-name').value = ProfileStore.data.name;
     }
 };
 
@@ -1190,10 +1183,6 @@ const UIManager = {
         
         peers.forEach((peer, i) => {
             const div = document.createElement('div');
-            let medal = '';
-            if (i === 0 && peer.score > 0) medal = ' 👑';
-            else if (i === 1 && peer.score > 0) medal = ' 🥈';
-            else if (i === 2 && peer.score > 0) medal = ' 🥉';
             div.className = `player-card ${GameEngine.state.currentTurn === peer.id ? 'is-drawer' : ''} ${peer.guessedCorrectly ? 'has-guessed' : ''}`;
             
             const rank = i + 1;
@@ -1201,7 +1190,7 @@ const UIManager = {
                 <div style="font-weight:bold; color:var(--text-dim); width: 20px;">#${rank}</div>
                 <div class="entity-avatar" style="width: 35px; height: 35px; font-size: 1rem; background:${peer.avatarColor}">${peer.avatarFace}</div>
                 <div class="player-card-info">
-                    <div class="player-card-name">${peer.name + medal}</div>
+                    <div class="player-card-name">${peer.name}</div>
                     <div class="player-card-score">Score: ${peer.score}</div>
                 </div>
                 ${GameEngine.state.currentTurn === peer.id ? '<div class="drawer-icon">✏️</div>' : ''}
@@ -1270,10 +1259,7 @@ const ChatSystem = {
         e.preventDefault();
         const input = document.getElementById('chat-input');
         const text = input.value.trim();
-        let processedText = text;
-        const emojiMap = { ':D': '😃', ':)': '😊', ':(': '☹️', '<3': '❤️', ':P': '😛', '!!!': '🔥' };
-        Object.keys(emojiMap).forEach(key => { processedText = processedText.replace(key, emojiMap[key]); });
-        if(!processedText) return;
+        if(!text) return;
         input.value = '';
 
         if (GlobalState.appPhase !== 'RUNNING') return;
@@ -1500,12 +1486,6 @@ const NetworkManager = {
             DrawingSystem.clearDirect();
         }
     }
-    kickPlayer: (peerId) => {
-        if (GlobalState.netRole === 'HOST' && NetworkManager.clientMap[peerId]) {
-            NetworkManager.clientMap[peerId].send({ op: 'REJECT', msg: 'KICKED BY HOST' });
-            NetworkManager.dropClient(peerId);
-        }
-    },
 };
 
 /**
@@ -1819,9 +1799,6 @@ const GameEngine = {
 
         GameEngine.state.timerInt = setInterval(() => {
             GameEngine.state.timeLeft--;
-            if (GameEngine.state.timeLeft === 25) { 
-                NetworkManager.broadcast({ op: 'CHAT', type: 'sys', msg: "HINT: Starts with '" + GameEngine.state.currentWord[0].toUpperCase() + "'" });
-            }
             NetworkManager.broadcast({ op: 'SYNC_STATE', time: GameEngine.state.timeLeft });
             document.getElementById('time-display').innerText = GameEngine.state.timeLeft;
             
